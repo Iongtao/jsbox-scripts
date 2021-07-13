@@ -1,6 +1,4 @@
-function fillZero(num) {
-  return num >= 10 ? String(num) : "0" + num;
-}
+const moment = require('moment')
 
 const aDayTime = 3600 * 1000 * 24;
 const date_cycle_map = new Map([
@@ -31,15 +29,12 @@ const list = [
 ];
 
 // 获取纪念日时长
-function getMemorialDay(time) {
+function getMemorialDay (time) {
   let day = 0;
   if (!time) return day;
-  const d = new Date();
-  const fullYear = d.getFullYear();
-  const month = fillZero(d.getMonth() + 1);
-  const date = fillZero(d.getDate() + 1);
-  const startTime = new Date(time).setHours(0, 0, 0, 0);
-  const nowTime = new Date(`${fullYear}-${month}-${date}`).setHours(0, 0, 0, 0);
+  const startTime = moment(time);
+  // 纪念日应当算上当天
+  const nowTime = moment().add(1, 'days').startOf('day')
   const timeSpace = nowTime - startTime;
 
   if (timeSpace > 0) {
@@ -49,37 +44,23 @@ function getMemorialDay(time) {
 }
 
 // 获取倒数日时长
-function getCountdownDay(time) {
+function getCountdownDay (time) {
   let day = 0;
   if (!time) return day;
-  const startTime = new Date(time);
-  const month = fillZero(startTime.getMonth());
-  const date = fillZero(startTime.getDate());
+  const startTime = moment(time);
+  const month = startTime.month();
+  const date = startTime.date();
   // 获取目标日期
-  const targetTime = (function () {
-    const d = new Date();
-    d.setMonth(month);
-    d.setDate(date);
-    d.setHours(0, 0, 0, 0);
-    return d;
-  })();
-
+  const targetTime = moment().set({ 'month': month, 'date': date }).startOf('day')
   // 获取当天
-  const nowTime = (function () {
-    const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
-  })();
-
+  const nowTime = moment().startOf('day')
   // 计算当天与目标日期差值
-  let value = new Date(nowTime).getTime() - new Date(targetTime).getTime();
-
+  let value = nowTime - targetTime;
   if (value <= 0) {
     // 今年的倒数日还没有过
     value = Math.abs(value);
 
     day = Math.ceil(value / aDayTime);
-
     if (day === 0) {
       day = "今天";
     }
@@ -87,9 +68,9 @@ function getCountdownDay(time) {
     // 今年的已经过去了
     // 算明年的
     day = Math.ceil(
-      (targetTime.setFullYear(new Date().getFullYear() + 1) -
-        new Date(nowTime).getTime()) /
-        aDayTime
+      (targetTime.add(1, 'years') -
+        nowTime) /
+      aDayTime
     );
   }
 
@@ -97,7 +78,7 @@ function getCountdownDay(time) {
 }
 
 // 渲染天数
-function renderDay(day) {
+function renderDay (day) {
   if (day.type === "memorial_day") {
     return String(getMemorialDay(day.targetTime));
   } else if (day.type === "countdown_day") {
@@ -106,7 +87,7 @@ function renderDay(day) {
 }
 
 // 渲染视图
-function renderViews(list) {
+function renderViews (list) {
   return list.map((v) => ({
     type: "hstack",
     props: {
@@ -157,19 +138,30 @@ function renderViews(list) {
   }));
 }
 
-$widget.setTimeline((ctx) => {
-  return {
-    type: "vstack",
-    props: {
-      background: $color("#f3f3f3"),
-      padding: $insets(16, 10, 16, 10),
-      spacing: 8,
-      frame: {
-        maxWidth: Infinity,
-        maxHeight: Infinity,
-        alignment: $widget.alignment.top,
-      },
+
+function render () {
+  $widget.setTimeline({
+    policy: {
+      afterDate: moment().add(1, 'days').startOf('day')
     },
-    views: renderViews(list),
-  };
-});
+    render: (ctx) => ({
+      type: "vstack",
+      props: {
+        background: $color("#f3f3f3"),
+        padding: $insets(16, 10, 16, 10),
+        spacing: 8,
+        frame: {
+          maxWidth: Infinity,
+          maxHeight: Infinity,
+          alignment: $widget.alignment.top,
+        },
+      },
+      views: renderViews(list),
+    })
+  });
+}
+
+
+module.exports = {
+  render
+}

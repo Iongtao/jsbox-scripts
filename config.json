@@ -1,0 +1,15 @@
+{
+  "info": {
+    "name": "纪念日",
+    "category": "个人",
+    "id": "",
+    "version": "1.0.0",
+    "icon": "icon_029.png",
+    "author": "曹尤进"
+  },
+  "settings": {
+    "minOSVer": "14.0.0",
+    "tips": "此jsbox应用只适用于小组件",
+    "env": "widget"
+  }
+}
